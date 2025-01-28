@@ -6,19 +6,24 @@ if (!code) {
   redirectToAuthCodeFlow(clientId);
 } else {
   const timeRange: string = "long_term";
+  const artistProfileId: string =
+    "0TnOYISbd1XYRBk9myaseg?si=dkPZaESAT--ZyZWsnuq-9Q";
   const accessToken = await getAccessToken(clientId, code);
   const profile = await fetchProfile(accessToken);
   const topArtists = await fetchTopArtists(accessToken, timeRange);
   const topTracks = await fetchTopTracks(accessToken, timeRange);
+  const artist = await fetchArtistProfile(accessToken, artistProfileId);
   console.log(
     "profile:",
     profile,
     "top artists:",
     topArtists,
     "top tracks:",
-    topTracks
+    topTracks,
+    "artist:",
+    artist
   );
-  populateUI(profile, topArtists, topTracks);
+  populateUI(profile, topArtists, topTracks, artist);
 }
 
 export async function redirectToAuthCodeFlow(clientId: string) {
@@ -79,9 +84,11 @@ export async function getAccessToken(
   });
 
   const { access_token } = await result.json();
+  console.log("Access token: ", access_token);
   return access_token;
 }
 
+// getting profile data from Spotify WebAPI
 async function fetchProfile(token: string): Promise<UserProfile> {
   const result = await fetch("https://api.spotify.com/v1/me", {
     method: "GET",
@@ -112,10 +119,25 @@ async function fetchTopTracks(token: string, timeRange: string): Promise<any> {
   return await result.json();
 }
 
+async function fetchArtistProfile(
+  token: string,
+  artistProfileId: string
+): Promise<any> {
+  const result = await fetch(
+    "https://api.spotify.com/v1/artists/" + artistProfileId,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return await result.json();
+}
+
 function populateUI(
   profile: UserProfile,
   topArtists: any = { items: [] },
-  topTracks: any = { items: [] }
+  topTracks: any = { items: [] },
+  artist: artistProfile
 ) {
   document.getElementById("displayName")!.innerText = profile.display_name;
   if (profile.images[0]) {
@@ -192,6 +214,29 @@ function populateUI(
     } catch (error) {
       console.error("Error fetching top genres:", error);
       topGenresContainer.innerText = "Failed to load top genres.";
+    }
+  }
+
+  //display artist profile
+  document.getElementById("artistName")!.innerText = artist.name;
+  if (artist.images[0]) {
+    const artistImage = new Image(200, 200);
+    artistImage.src = artist.images[0].url;
+    document.getElementById("artistAvatar")!.appendChild(artistImage);
+  }
+  document.getElementById("artistId")!.innerText = artist.id;
+  const artistGenresContainer = document.getElementById("artistGenres");
+  if (artistGenresContainer) {
+    try {
+      if (artist.genres.length == 0) {
+        artistGenresContainer.innerText =
+          "No genres attributed to this artist.";
+      }
+      artist.genres.forEach((genre: any) => {
+        artistGenresContainer.innerText += genre + ", ";
+      });
+    } catch (error) {
+      console.error("Error fetching artist genres:", error);
     }
   }
 }

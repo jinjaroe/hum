@@ -21,3 +21,18 @@ interface Image {
   height: number;
   width: number;
 }
+
+interface artistProfile {
+  external_urls: {
+    spotify: string;
+  };
+  followers: { href: string; total: number };
+  genres: [];
+  href: string;
+  id: string;
+  images: Image[];
+  name: string;
+  popularity: number;
+  type: string;
+  uri: string;
+}
