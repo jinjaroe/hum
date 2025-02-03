@@ -1,5 +1,7 @@
 node_modules/
 .env
+/backend/venv
+venv
 dist/
 .DS_Store
 *.log.DS_Store
