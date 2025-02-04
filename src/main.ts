@@ -13,6 +13,10 @@ if (!code) {
   const topArtists = await fetchTopArtists(accessToken, timeRange);
   const topTracks = await fetchTopTracks(accessToken, timeRange);
   const artist = await fetchArtistProfile(accessToken, artistProfileId);
+
+  //troubleshooting backend API call for fetching genres
+  const artistIds = getArtistIDs(topArtists).slice(0, 2);
+  const topArtistGenres = fetchGenres(artistIds);
   console.log(
     "profile:",
     profile,
@@ -21,7 +25,11 @@ if (!code) {
     "top tracks:",
     topTracks,
     "artist:",
-    artist
+    artist,
+    "artistIDs:",
+    artistIds,
+    "top artists' genres:",
+    topArtistGenres
   );
   populateUI(profile, topArtists, topTracks, artist);
 }
@@ -119,6 +127,16 @@ async function fetchTopTracks(token: string, timeRange: string): Promise<any> {
   return await result.json();
 }
 
+async function fetchGenres(artistIds: string[]) {
+  const response = await fetch(
+    `http://127.0.0.1:8000/get-genres/?artist_ids=${artistIds.join(
+      "&artistIds="
+    )}`
+  );
+  const data = await response.json();
+  return data;
+}
+
 async function fetchArtistProfile(
   token: string,
   artistProfileId: string
@@ -131,6 +149,15 @@ async function fetchArtistProfile(
     }
   );
   return await result.json();
+}
+
+// take object array of artists, return array of artist ids (string)
+function getArtistIDs(artists: any = { items: [] }) {
+  const artistIDs: string[] = [];
+  artists.items.forEach((artist: any) => {
+    artistIDs.push(artist.id);
+  });
+  return artistIDs;
 }
 
 function populateUI(
@@ -184,38 +211,38 @@ function populateUI(
     }
   }
 
-  //Loop through genres arrays of all top artists
-  //Create dictionary or object to count occurrences of each genre
-  const genreCounts: { [genre: string]: number } = {};
+  // //Loop through genres arrays of all top artists
+  // //Create dictionary or object to count occurrences of each genre
+  // const genreCounts: { [genre: string]: number } = {};
 
-  topArtists.items.forEach((artist: any) => {
-    artist.genres.forEach((genre: string) => {
-      genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-    });
-  });
+  // topArtists.items.forEach((artist: any) => {
+  //   artist.genres.forEach((genre: string) => {
+  //     genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+  //   });
+  // });
 
-  //convert genre count object into array of key-value pairs
-  //sort array by frequency in decending order
-  const sortedGenres = Object.entries(genreCounts).sort(
-    ([, countA], [, countB]) => countB - countA
-  );
+  // //convert genre count object into array of key-value pairs
+  // //sort array by frequency in decending order
+  // const sortedGenres = Object.entries(genreCounts).sort(
+  //   ([, countA], [, countB]) => countB - countA
+  // );
 
-  //display top genres
-  const topGenres = sortedGenres.slice(0, 20).map(([genre]) => genre);
-  console.log("Top Genres:", topGenres);
-  const topGenresContainer = document.getElementById("topGenres");
-  if (topGenresContainer) {
-    try {
-      topGenres.forEach((genre: any) => {
-        const genreElement = document.createElement("div");
-        genreElement.innerText = genre;
-        topGenresContainer.appendChild(genreElement);
-      });
-    } catch (error) {
-      console.error("Error fetching top genres:", error);
-      topGenresContainer.innerText = "Failed to load top genres.";
-    }
-  }
+  // //display top genres
+  // const topGenres = sortedGenres.slice(0, 20).map(([genre]) => genre);
+  // console.log("Top Genres:", topGenres);
+  // const topGenresContainer = document.getElementById("topGenres");
+  // if (topGenresContainer) {
+  //   try {
+  //     topGenres.forEach((genre: any) => {
+  //       const genreElement = document.createElement("div");
+  //       genreElement.innerText = genre;
+  //       topGenresContainer.appendChild(genreElement);
+  //     });
+  //   } catch (error) {
+  //     console.error("Error fetching top genres:", error);
+  //     topGenresContainer.innerText = "Failed to load top genres.";
+  //   }
+  // }
 
   //display artist profile
   document.getElementById("artistName")!.innerText = artist.name;
