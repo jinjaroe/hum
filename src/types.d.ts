@@ -36,3 +36,7 @@ interface artistProfile {
   type: string;
   uri: string;
 }
+
+interface artistGenres {
+  artist_genres: {};
+}

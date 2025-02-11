@@ -6,3 +6,4 @@ dist/
 .DS_Store
 *.log.DS_Store
 backend/aid_to_genre_ppps.csv
+backend/__pycache__

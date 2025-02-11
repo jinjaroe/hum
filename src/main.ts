@@ -13,10 +13,12 @@ if (!code) {
   const topArtists = await fetchTopArtists(accessToken, timeRange);
   const topTracks = await fetchTopTracks(accessToken, timeRange);
   const artist = await fetchArtistProfile(accessToken, artistProfileId);
-
+  // const enrichedArtistsDict = await fetchAndMergeArtistData(topArtists);
   //troubleshooting backend API call for fetching genres
-  const artistIds = getArtistIDs(topArtists).slice(0, 2);
-  const topArtistGenres = fetchGenres(artistIds);
+  const artistIds = getArtistIDs(topArtists);
+  const topArtistGenres = await fetchGenres(artistIds);
+  // const topArtistGenresDict = fetchGenres(artistIds);
+
   console.log(
     "profile:",
     profile,
@@ -25,13 +27,11 @@ if (!code) {
     "top tracks:",
     topTracks,
     "artist:",
-    artist,
-    "artistIDs:",
-    artistIds,
-    "top artists' genres:",
-    topArtistGenres
+    artist
+    // "ennriched top artists:",
+    // enrichedArtistsDict
   );
-  populateUI(profile, topArtists, topTracks, artist);
+  populateUI(profile, topArtists, topTracks, artist, topArtistGenres);
 }
 
 export async function redirectToAuthCodeFlow(clientId: string) {
@@ -129,7 +129,7 @@ async function fetchTopTracks(token: string, timeRange: string): Promise<any> {
 
 async function fetchGenres(artistIds: string[]) {
   const response = await fetch(
-    `http://127.0.0.1:8000/get-genres/?artist_ids=${artistIds.join(
+    `http://127.0.0.1:8000/get-genres/?artistIds=${artistIds.join(
       "&artistIds="
     )}`
   );
@@ -151,6 +151,20 @@ async function fetchArtistProfile(
   return await result.json();
 }
 
+// async function fetchAndMergeArtistData(artists: artistProfile[]) {
+//   const artistIds = artists.map((artist) => artist.id); // Extract only the IDs
+//   const genresDict = await fetchGenres(artistIds); // Fetch genres from backend
+
+//   // Merge genres with the existing artist data
+//   const enrichedArtists = artists.map((artist) => ({
+//     ...artist,
+//     genres: genresDict[artist.id] || [], // Assign genres if found, else empty array
+//   }));
+
+//   console.log(enrichedArtists);
+//   return enrichedArtists;
+// }
+
 // take object array of artists, return array of artist ids (string)
 function getArtistIDs(artists: any = { items: [] }) {
   const artistIDs: string[] = [];
@@ -160,11 +174,26 @@ function getArtistIDs(artists: any = { items: [] }) {
   return artistIDs;
 }
 
+// function calculateTopGenres(artistGenreDict: { [key: string]: string[] }) {
+//   const genreCounts: { [key: string]: number } = {};
+//   const artistList = Object.keys(artistGenreDict);
+
+//   artistList.forEach((artist, index) => {
+//     const weight = 1 / (index + 1); // Higher-ranked artists get more weight
+//     artistGenreDict[artist].forEach((genre) => {
+//       genreCounts[genre] = (genreCounts[genre] || 0) + weight;
+//     });
+//   });
+
+//   return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]); // Sort by weight
+// }
+
 function populateUI(
   profile: UserProfile,
   topArtists: any = { items: [] },
   topTracks: any = { items: [] },
-  artist: artistProfile
+  artist: artistProfile,
+  artistGenres: artistGenres
 ) {
   document.getElementById("displayName")!.innerText = profile.display_name;
   if (profile.images[0]) {
@@ -211,38 +240,21 @@ function populateUI(
     }
   }
 
-  // //Loop through genres arrays of all top artists
-  // //Create dictionary or object to count occurrences of each genre
-  // const genreCounts: { [genre: string]: number } = {};
-
-  // topArtists.items.forEach((artist: any) => {
-  //   artist.genres.forEach((genre: string) => {
-  //     genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-  //   });
-  // });
-
-  // //convert genre count object into array of key-value pairs
-  // //sort array by frequency in decending order
-  // const sortedGenres = Object.entries(genreCounts).sort(
-  //   ([, countA], [, countB]) => countB - countA
-  // );
-
-  // //display top genres
-  // const topGenres = sortedGenres.slice(0, 20).map(([genre]) => genre);
-  // console.log("Top Genres:", topGenres);
-  // const topGenresContainer = document.getElementById("topGenres");
-  // if (topGenresContainer) {
-  //   try {
-  //     topGenres.forEach((genre: any) => {
-  //       const genreElement = document.createElement("div");
-  //       genreElement.innerText = genre;
-  //       topGenresContainer.appendChild(genreElement);
-  //     });
-  //   } catch (error) {
-  //     console.error("Error fetching top genres:", error);
-  //     topGenresContainer.innerText = "Failed to load top genres.";
-  //   }
-  // }
+  const genresContainer = document.getElementById("topGenres");
+  if (genresContainer) {
+    try {
+      // Iterate through topArtistGenres and create a formatted display
+      for (const [artistId, genres] of Object.entries(artistGenres)) {
+        const artistInfo = document.createElement("p");
+        artistInfo.textContent = `${artistId}: ${genres.join(", ")}`; // Convert array to comma-separated string
+        genresContainer.appendChild(artistInfo);
+      }
+    } catch (error) {
+      console.error("Error fetching genres:", error);
+      genresContainer.innerText =
+        "Failed to load genres dictionary from backend.";
+    }
+  }
 
   //display artist profile
   document.getElementById("artistName")!.innerText = artist.name;
