@@ -37,6 +37,16 @@ interface artistProfile {
   uri: string;
 }
 
+interface artistList {
+  href: string; // URL for the API request
+  items: Artist[]; // Array of artist objects (each follows the 'Artist' structure)
+  limit: number; // The limit on the number of artists returned
+  offset: number; // The offset for pagination
+  total: number; // The total number of artists available
+  next: string | null; // URL for the next set of artists (or null if no more results)
+  previous: string | null; // URL for the previous set of artists (or null if none)
+}
+
 interface artistGenres {
   artist_genres: {};
 }
