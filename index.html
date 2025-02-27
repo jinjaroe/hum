@@ -1,41 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>My Spotify Profile</title>
-    <script src="src/main.ts" type="module"></script>
-  </head>
-  <body>
-    <h1>Display your music taste</h1>
-
-    <section id="profile">
-      <h2>Logged in as <span id="displayName"></span></h2>
-      <span id="avatar"></span>
-      <ul>
-        <li>User ID: <span id="id"></span></li>
-        <li>Email: <span id="email"></span></li>
-        <li>Spotfy URI: <a id="uri" href="#"></a></li>
-        <li>Link: <a id="url" href="#"></a></li>
-        <li>Profile Image: <span id="imgUrl"></span></li>
-      </ul>
-      <div id="topArtists">
-        <h2>Top Artists</h2>
+    <head>
+        <meta charset="utf-8">
+        <title>My Spotify Profile</title>
+        <script src="src/script.ts" type="module"></script>
+        <link href="./src/tailwind.css" rel="stylesheet">
+    </head>
+    <body class="font-inter bg-gradient-to-br from-[#2c2c2c] to-[#121212] text-white m-0 p-5 text-center">
+      <h1 class="text-5xl font-semibold my-6 text-white">Welcome to HUM.FM</h1>
+      
+      <section id="profile" class="bg-[rgba(30,30,30,0.9)] p-5 rounded-xl w-[90%] max-w-[1000px] mx-auto my-5 shadow-lg relative">
+        <h2 class="text-2xl font-semibold mb-3 text-white">Logged in as <span id="displayName"></span></h2>
+          <span id="avatar" class="absolute top-5 right-5"></span>
+        <ul class="list-none p-0 text-left mt-5">
+            <li class="text-lg my-2 text-[#d4d4d4]">Profile Name: <span id="id"></span></li>
+            <li class="text-lg my-2 text-[#d4d4d4]">Email: <span id="email"></span></li>
+            <li class="text-lg my-2 text-[#d4d4d4]">Your Spotify URI: <a id="uri" href="#" class="text-[#89E4FF] no-underline font-bold hover:underline"></a></li>
+        </ul>
+      </section>
+      
+      <div id="content" class="text-center flex justify-between max-w-[800px] mx-auto my-5 gap-5">
+        <div class="text-center bg-[rgba(30,30,30,0.9)] flex-[9] p-5 rounded-xl shadow-lg max-h-[500px] overflow-y-auto" id="topArtists">
+          <h2 class="text-2xl font-semibold mb-3 text-white">Your Top Artists</h2>
+        </div>
+        <div class="text-center bg-[rgba(30,30,30,0.9)] flex-[9] p-5 rounded-xl shadow-lg max-h-[500px] overflow-y-auto" id="topTracks">
+          <h2 class="text-2xl font-semibold mb-3 text-white">Your Top Tracks</h2>
+        </div>
       </div>
-      <div id="topGenres">
-        <h2>Top Artists' Genres (from ENAO data)</h2>
-      </div>
-      <div id="topTracks">
-        <h2>Top Tracks</h2>
-      </div>
-    </section>
-
-    <section id="artist">
-      <h2>Identified Artist: <span id="artistName"></span></h2>
-      <span id="artistAvatar"></span>
-      <ul>
-        <li>Artist ID: <span id="artistId"></span></li>
-        <li>Genres: <span id="artistGenres"></span></li>
-      </ul>
-    </section>
-  </body>
+    </body>
 </html>
+
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>My Spotify Profile</title>
+        <script src="src/script.ts" type="module"></script>
+        <link rel="stylesheet" href="src/styles.css">
+    </head>
+    <body>
+      <h1>Welcome to HUM.FM</h1>
+      <section id="profile">
+        <h2>Logged in as <span id="displayName"></span></h2>
+          <span id="avatar"></span>
+        <ul>
+            <li>Profile Name: <span id="id"></span></li>
+            <li>Email: <span id="email"></span></li>
+            <li>Your Spotify URI: <a id="uri" href="#"></a></li> -->
+            <!-- li>Link: <a id="url" href="#"></a></li>
+            <li>Profile Image: <span id="imgUrl"></span></li> -->
+        <!-- </ul>
+      </section>
+        <div id="content">
+          <div class="column" id="topArtists">
+            <h2>Your Top Artists</h2>
+          </div>
+          <div class="column" id="topTracks">
+            <h2>Your Top Tracks</h2>
+          </div>
+        </div> -->
+          <!-- <div id="topArtists">
+            <h2>Your Top Artists</h2>
+          </div>
+          <div id="topTracks">
+            <h2>Your Top Tracks</h2> -->
+    <!-- </body>
+</html> -->
