@@ -6,18 +6,46 @@ if (!code) {
   redirectToAuthCodeFlow(clientId);
 } else {
   const timeRange: string = "long_term";
-  const artistProfileId: string =
-    "0TnOYISbd1XYRBk9myaseg?si=dkPZaESAT--ZyZWsnuq-9Q";
+  const limit: string = "50";
+
+  const artistProfileId: string = "7LwsFYi5ugJCKFsXmMVyua";
   const accessToken = await getAccessToken(clientId, code);
   const profile = await fetchProfile(accessToken);
-  const topArtists = await fetchTopArtists(accessToken, timeRange);
-  const topTracks = await fetchTopTracks(accessToken, timeRange);
+  const topArtists = await fetchTopArtists(accessToken, timeRange, limit);
+  const topTracks = await fetchTopTracks(accessToken, timeRange, limit);
   const artist = await fetchArtistProfile(accessToken, artistProfileId);
-  const enrichedArtistsDict: { id: string; genres: string[] }[] =
+
+  const artistIDsFromTopTracks = getArtistIDsFromTracks(topTracks);
+  const artistsFromTopTracks = await fetchSeveralArtists(
+    accessToken,
+    artistIDsFromTopTracks
+  );
+  const enrichedTopTrackArtists: { id: string; genres: string[] }[] =
+    await fetchAndMergeArtistData(artistsFromTopTracks);
+
+  const enrichedTopArtists: { id: string; genres: string[] }[] =
+    //enrich top artists with ENAO genres
     await fetchAndMergeArtistData(topArtists);
+  //enrich artists from top tracks with ENAO genres
+  // const enrichedArtistsFromTracks: { id: string; genres: string[] }[] =
+  //   await fetchAndMergeArtistData(artistsFromTopTracks);
   //troubleshooting backend API call for fetching genres
 
-  const topArtistGenres = calculateTopGenresWithArtists(enrichedArtistsDict);
+  //const artistDatabase to store artists from both top artists and top tracks
+  //list of artist objects
+  //id, name uri, source (top artists or top tracks?), associatedTopTracks
+  //some sort of filter to distinguish which items to calculate (top artists vs. top tracks)
+
+  //step 1
+  //query spotify's api for top artists-> list of metadata-enriched artists
+  //2) take top artists, pass into my api -> genre-enriched artists
+  //3) different call to spotify's api for top tracks
+  //4) call to spotify api -> get enriched metadata for artists from top tracks
+  //5) pass enriched metadata array of artists (from top tracks) -> get genre enriched versions
+
+  const topArtistGenres = calculateTopGenresFromArtists(enrichedTopArtists);
+  const topSongGenres = calculateTopGenresFromTracks(enrichedTopTrackArtists);
+  const mergedTopGenres = mergeGenreScores(topArtistGenres, topSongGenres);
 
   console.log(
     "profile:",
@@ -29,12 +57,20 @@ if (!code) {
     "artist:",
     artist,
     "enriched top artists:",
-    enrichedArtistsDict,
+    enrichedTopArtists,
     // "topArtistGenres:",
     // topArtistGenres
-    "top genres based on top artists:",
-    topArtistGenres
+    "artists from top tracks:",
+    artistsFromTopTracks,
+    "enriched artists from top tracks:",
+    enrichedTopTrackArtists
   );
+  console.log("top genres based on top artists:", topArtistGenres);
+
+  console.log("top genres based on top tracks:", topSongGenres);
+
+  console.log("merged top genres:", mergedTopGenres);
+
   populateUI(
     profile,
     topArtists,
@@ -115,9 +151,16 @@ async function fetchProfile(token: string): Promise<UserProfile> {
   return await result.json();
 }
 
-async function fetchTopArtists(token: string, timeRange: string): Promise<any> {
+async function fetchTopArtists(
+  token: string,
+  timeRange: string,
+  limit: string
+): Promise<any> {
   const result = await fetch(
-    "https://api.spotify.com/v1/me/top/artists?time_range=" + timeRange,
+    "https://api.spotify.com/v1/me/top/artists?time_range=" +
+      timeRange +
+      "&limit=" +
+      limit,
     {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
@@ -126,15 +169,37 @@ async function fetchTopArtists(token: string, timeRange: string): Promise<any> {
   return await result.json();
 }
 
-async function fetchTopTracks(token: string, timeRange: string): Promise<any> {
+async function fetchTopTracks(
+  token: string,
+  timeRange: string,
+  limit: string
+): Promise<any> {
   const result = await fetch(
-    "https://api.spotify.com/v1/me/top/tracks?time_range=" + timeRange,
+    "https://api.spotify.com/v1/me/top/tracks?time_range=" +
+      timeRange +
+      "&limit=" +
+      limit,
     {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }
   );
   return await result.json();
+}
+
+//trying to get artists objects for each track + add them to a list. I initially tried
+// doing more sensible approach without making API call (line 233), but results in different formatting than topArtists
+
+//return list of artist objects of topTracks, send it to fetchAndMergeArtistData
+
+function getArtistIDsFromTracks(tracks: trackList) {
+  //create list of artistIDs from topTracks
+  const artistIDs: string[] = [];
+  tracks.items.forEach((track: any) => {
+    artistIDs.push(track.artists[0].id); //adding the primary artist to the list
+  });
+
+  return artistIDs;
 }
 
 async function fetchGenres(artistIds: string[]) {
@@ -161,22 +226,29 @@ async function fetchArtistProfile(
   return await result.json();
 }
 
+async function fetchSeveralArtists(token: string, artistIDs: string[]) {
+  let idString: string = "";
+  artistIDs.forEach((id: string) => {
+    idString += id + ",";
+  });
+
+  //use idString to call Spotify API
+  const result = await fetch(
+    "https://api.spotify.com/v1/artists/?ids=" + idString,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return await result.json();
+}
 async function fetchAndMergeArtistData(artists: artistList) {
-  const artistIds = getArtistIDs(artists); // Extract only the IDs
+  const formattedArtists = { items: artists.artists || artists.items || [] };
+  console.log("formatted artists:", formattedArtists);
+  const artistIds = getArtistIDs(formattedArtists); // Extract only the IDs
   const genresDict = await fetchGenres(artistIds); // Fetch genres from backend
-  console.log("genres from ENAO: ", genresDict);
-  console.log("Spotify genres for JPEGMAFIA: ", artists.items[1].genres);
-  console.log(
-    "ENAO genres for JPEGMAFIA: ",
-    genresDict["6yJ6QQ3Y5l0s0tn7b0arrO"]
-  );
-  console.log("Spotify genres for Elijah Fox: ", artists.items[5].genres);
-  console.log(
-    "ENAO genres for Elijah Fox: ",
-    genresDict["4Rus30xX4FOv2cyeFI79Qh"]
-  );
   // Merge genres with the existing artist data
-  const enrichedArtists = artists.items.map((artist) => ({
+  const enrichedArtists = formattedArtists.items.map((artist) => ({
     ...artist,
     genres: [
       ...new Set([
@@ -187,30 +259,45 @@ async function fetchAndMergeArtistData(artists: artistList) {
     ],
   }));
 
-  console.log("Updated artist objects: ", enrichedArtists);
   return enrichedArtists;
 }
 
+// async function fetchAndMergeArtistDataFromTopTracks(artists: trackArtists) {
+//   const artistIds = getArtistIDs(artists);
+//   const genresDict = await fetchGenres(artistIds);
+
+//   const enrichedArtists = artists.items.map((artist) => ({}));
+// }
+
 // take object array of artists, return array of artist ids (string)
-function getArtistIDs(artists: any = { items: [] }) {
-  const artistIDs: string[] = [];
-  artists.items.forEach((artist: any) => {
-    artistIDs.push(artist.id);
-  });
-  return artistIDs;
+//NOTE- maximum of 50 items in array
+function getArtistIDs(artists: any) {
+  const artistList = artists.items || artists.artists || []; // Check which property exists
+  return artistList.map((artist: any) => artist.id); // Extract artist IDs
 }
 
+// function getArtistsFromTracks(tracks: trackList) {
+//   const artistIDs: string[] = [];
+//   tracks.items.forEach((track: any) => {
+//     artistIDs.push(track.artists[0]); //adding the primary artist to the list
+//   });
+//   return artistIDs;
+// }
+
+//get genres from track
 //Calculate top genres based on top artists and top tracks.
 //Weigh genres of an artist based on rank in top artists list
-function calculateTopGenresWithArtists(
+function calculateTopGenresFromArtists(
   enrichedArtistsDict: Array<{ id: string; genres: string[] }>
 ) {
   const genreCounts: { [key: string]: number } = {};
 
   enrichedArtistsDict.forEach((artist, index) => {
     const weight = 1 / (index + 1); // Higher-ranked artists get more weight
+    const numGenres = artist.genres.length || 1; // Avoid division by zero
+
     artist.genres.forEach((genre) => {
-      genreCounts[genre] = (genreCounts[genre] || 0) + weight;
+      genreCounts[genre] = (genreCounts[genre] || 0) + weight / numGenres; //if genre already stored, add weight to existing weight- if new genre, use 0
     });
   });
 
@@ -218,7 +305,41 @@ function calculateTopGenresWithArtists(
 }
 
 //do the same for top tracks
-function calculateTopGenresWithTracks() {}
+function calculateTopGenresFromTracks(
+  enrichedArtistsDict: Array<{ id: string; genres: string[] }>
+) {
+  const genreCounts: { [key: string]: number } = {};
+
+  enrichedArtistsDict.forEach((artist, index) => {
+    const weight = 1 / (index + 1); // Higher-ranked artists get more weight
+    const numGenres = artist.genres.length || 1; // Avoid division by zero
+
+    artist.genres.forEach((genre) => {
+      genreCounts[genre] = (genreCounts[genre] || 0) + weight / numGenres; //if genre already stored, add weight to existing weight- if new genre, use 0
+    });
+  });
+
+  return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]); // Sort by weight
+}
+
+function mergeGenreScores(
+  topArtistGenres: [string, number][],
+  topSongGenres: [string, number][],
+  artistWeight: number = 0.5,
+  songWeight: number = 0.5
+) {
+  const genreScores: { [key: string]: number } = {};
+
+  topArtistGenres.forEach(([genre, score]) => {
+    genreScores[genre] = (genreScores[genre] || 0) + score * artistWeight;
+  });
+
+  topSongGenres.forEach(([genre, score]) => {
+    genreScores[genre] = (genreScores[genre] || 0) + score * songWeight;
+  });
+
+  return Object.entries(genreScores).sort((a, b) => b[1] - a[1]); //Sort by total weight
+}
 
 function populateUI(
   profile: UserProfile,

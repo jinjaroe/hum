@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 # load csv data once to avoid reloading on every request
-df = pd.read_csv("aid_to_genre_ppps.csv")
+df = pd.read_csv("data/aid_to_genre_ppps.csv")
 artistColumn = "aid"
 genreColumn = "genres"
 

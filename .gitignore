@@ -7,3 +7,4 @@ dist/
 *.log.DS_Store
 backend/aid_to_genre_ppps.csv
 backend/__pycache__
+backend/chromedriver_mac_arm64/
