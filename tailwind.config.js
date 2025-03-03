@@ -6,17 +6,23 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Custom colors to match your current design
         background: {
           dark: '#121212',
           card: 'rgba(30, 30, 30, 0.9)',
         },
-        spotify: {
-          blue: '#89E4FF',
+        humblue: {
+          blue: '#3FBCFF',
         },
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
+      },
+      fontFamily: {
+        chakra: ['"Chakra Petch"', 'sans-serif'],
+      },
+      fontWeight: {
+        medium: '500',
+        bold: '700',
       },
       boxShadow: {
         card: '0 4px 10px rgba(0, 0, 0, 0.5)',
