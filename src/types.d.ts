@@ -73,3 +73,8 @@ interface trackList {
 interface artistGenres {
   artist_genres: {};
 }
+
+interface GenreData {
+  genre: string;
+  value: number;
+}

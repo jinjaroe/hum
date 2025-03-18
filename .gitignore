@@ -2,6 +2,7 @@ node_modules/
 .env
 /backend/venv
 venv
+package-lock.json
 dist/
 .DS_Store
 *.log.DS_Store

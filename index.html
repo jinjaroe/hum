@@ -1,27 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>HUM.FM</title>
     <script src="src/script.ts" type="module"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
   </head>
   <body class="bg-black text-white min-h-screen">
     <!-- Navigation and Search Bar -->
     <header class="p-4 flex items-center justify-between">
       <!-- Logo -->
       <div class="flex items-center">
-        <h1 class="font-chakra font-bold text-4xl petch tracking-tighter">hum</h1>
-        <span class="font-chakra font-bold bg-blue-400 text-xs px-2 py-1 rounded ml-1 text-black">fm</span>
+        <h1 class="font-chakra font-bold text-4xl petch tracking-tighter">
+          hum
+        </h1>
+        <span
+          class="font-chakra font-bold bg-blue-400 text-xs px-2 py-1 rounded ml-1 text-black"
+          >fm</span
+        >
       </div>
 
       <!-- Search Bar -->
       <div class="w-1/3">
-        <input 
-          type="text" 
-          placeholder="search genres, songs, artists..." 
+        <input
+          type="text"
+          placeholder="search genres, songs, artists..."
           class="w-full bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-sm text-gray-300"
-        >
+        />
       </div>
 
       <!-- Profile Avatar -->
@@ -36,20 +44,31 @@
     <nav class="px-4 mt-2 flex items-center">
       <a href="#" class="text-gray-400 mr-6">explore</a>
       <a href="#" class="font-bold mr-6">personal</a>
-      
+
       <!-- Dropdown -->
       <div class="relative inline-block mr-4">
         <button class="bg-gray-800 rounded flex items-center px-3 py-1">
           <span class="text-sm mr-2">all time</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            ></path>
           </svg>
         </button>
       </div>
 
       <!-- Checkbox -->
       <div class="flex items-center">
-        <input type="checkbox" id="showTimeline" class="mr-2">
+        <input type="checkbox" id="showTimeline" class="mr-2" />
         <label for="showTimeline" class="text-sm">Show timeline</label>
       </div>
     </nav>
@@ -60,7 +79,9 @@
       <div class="flex flex-1 relative">
         <!-- Left Vertical Text -->
         <div class="absolute left-0 top-0 h-full flex items-center">
-          <div class="transform -rotate-90 whitespace-nowrap text-gray-500 text-sm">
+          <div
+            class="transform -rotate-90 whitespace-nowrap text-gray-500 text-sm"
+          >
             more organic
           </div>
         </div>
@@ -72,7 +93,9 @@
 
         <!-- Right Vertical Text -->
         <div class="absolute right-0 bottom-0 h-full flex items-center">
-          <div class="transform -rotate-90 whitespace-nowrap text-gray-500 text-sm">
+          <div
+            class="transform -rotate-90 whitespace-nowrap text-gray-500 text-sm"
+          >
             more mechanical
           </div>
         </div>
@@ -81,8 +104,19 @@
       <!-- Bottom Navigation -->
       <div class="flex justify-between items-center mt-4 py-2">
         <div class="flex items-center">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          <svg
+            class="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
           </svg>
           <span class="text-sm text-gray-500">more atmospheric</span>
         </div>
@@ -91,8 +125,19 @@
 
         <div class="flex items-center">
           <span class="text-sm text-gray-500">more bouncy</span>
-          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          <svg
+            class="w-4 h-4 ml-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5l7 7-7 7"
+            ></path>
           </svg>
         </div>
       </div>
@@ -109,3 +154,49 @@
     </div>
   </body>
 </html>
+
+<!-- CODE FOR OLD HTML PAGE BELOW-->
+<!-- <!DOCTYPE html>
+ <html lang="en">
+   <head>
+     <meta charset="utf-8" />
+     <title>My Spotify Profile</title>
+     <script src="src/main.ts" type="module"></script>
+   </head>
+   <body>
+     <h1>Display your music taste</h1>
+ 
+     <section id="profile">
+       <h2>Logged in as <span id="displayName"></span></h2>
+       <span id="avatar"></span>
+       <ul>
+         <li>User ID: <span id="id"></span></li>
+         <li>Email: <span id="email"></span></li>
+         <li>Spotfy URI: <a id="uri" href="#"></a></li>
+         <li>Link: <a id="url" href="#"></a></li>
+         <li>Profile Image: <span id="imgUrl"></span></li>
+       </ul>
+       <div id="topArtists">
+         <h2>Top Artists</h2>
+       </div>
+       <div id="topGenres">
+         <h2>Top Artists' Genres (from ENAO data)</h2>
+       </div>
+       <div id="topTracks">
+         <h2>Top Tracks</h2>
+       </div>
+       <div id="topGenres">
+         <h2>Top Genres (from Spotify Web API)</h2>
+       </div>
+     </section>
+ 
+     <section id="artist">
+       <h2>Identified Artist: <span id="artistName"></span></h2>
+       <span id="artistAvatar"></span>
+       <ul>
+         <li>Artist ID: <span id="artistId"></span></li>
+         <li>Genres: <span id="artistGenres"></span></li>
+       </ul>
+     </section>
+   </body>
+ </html> -->

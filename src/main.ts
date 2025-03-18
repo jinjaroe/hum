@@ -1,3 +1,5 @@
+// import * as d3 from "d3";
+
 const clientId = "2e09b5c382a44f29a81b0c72ffba8b16";
 const params = new URLSearchParams(window.location.search);
 const code = params.get("code");
@@ -432,3 +434,46 @@ function populateUI(
     }
   }
 }
+
+// //map genres using d3
+// function plotGenres(genres: GenreData[]) {
+//   const svg = d3.select("#genre-map");
+//   const width = +svg.attr("width");
+//   const height = +svg.attr("height");
+
+//   const xScale = d3
+//     .scaleBand()
+//     .domain(genres.map((d) => d.genre))
+//     .range([0, width])
+//     .padding(0.1);
+
+//   const yScale = d3
+//     .scaleLinear()
+//     .domain([0, d3.max(genres, (d) => d.value) || 0])
+//     .range([height, 0]);
+
+//   // Draw bars
+//   svg
+//     .selectAll("rect")
+//     .data(genres)
+//     .enter()
+//     .append("rect")
+//     .attr("x", (d) => xScale(d.genre) || 0)
+//     .attr("y", (d) => yScale(d.value))
+//     .attr("width", xScale.bandwidth())
+//     .attr("height", (d) => height - yScale(d.value))
+//     .attr("fill", "steelblue");
+
+//   // Add labels
+//   svg
+//     .selectAll("text")
+//     .data(genres)
+//     .enter()
+//     .append("text")
+//     .attr("x", (d) => (xScale(d.genre) || 0) + xScale.bandwidth() / 2)
+//     .attr("y", (d) => yScale(d.value) - 5)
+//     .attr("text-anchor", "middle")
+//     .text((d) => d.genre)
+//     .style("font-size", "12px")
+//     .style("fill", "#333");
+// }

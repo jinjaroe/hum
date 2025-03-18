@@ -18,6 +18,8 @@ app.add_middleware(
 
 # load csv data once to avoid reloading on every request
 df = pd.read_csv("data/aid_to_genre_ppps.csv")
+#df2 = pd.read_csv for genre coordinates
+# make one api call to handle all data- faster, more organized
 artistColumn = "aid"
 genreColumn = "genres"
 
@@ -31,4 +33,5 @@ async def get_genres(artistIds: List[str] = Query(...)) -> dict:
     for _, row in filtered_df.iterrows(): # (for index, row)
         artist_genre_dict[row[artistColumn]] = row[genreColumn].split("; ")
         
+    #add in coordinate information for each genre from scraped data
     return artist_genre_dict
