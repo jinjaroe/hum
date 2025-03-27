@@ -22,10 +22,14 @@ if (!code) {
     accessToken,
     artistIDsFromTopTracks
   );
-  const enrichedTopTrackArtists: { id: string; genres: string[] }[] =
-    await fetchAndMergeArtistData(artistsFromTopTracks);
 
-  const enrichedTopArtists: { id: string; genres: string[] }[] =
+  const enrichedTopTrackArtists: {
+    id: string;
+    genres: string[];
+    name: string;
+  }[] = await fetchAndMergeArtistData(artistsFromTopTracks);
+
+  const enrichedTopArtists: { id: string; genres: string[]; name: string }[] =
     //enrich top artists with ENAO genres
     await fetchAndMergeArtistData(topArtists);
   //enrich artists from top tracks with ENAO genres
@@ -45,9 +49,15 @@ if (!code) {
   //4) call to spotify api -> get enriched metadata for artists from top tracks
   //5) pass enriched metadata array of artists (from top tracks) -> get genre enriched versions
 
+  //two genre lists with genres and scores filled in. Then add artists, then combine them- then get coordinates
   const topArtistGenres = calculateTopGenresFromArtists(enrichedTopArtists);
   const topSongGenres = calculateTopGenresFromTracks(enrichedTopTrackArtists);
-  const mergedTopGenres = mergeGenreScores(topArtistGenres, topSongGenres);
+  parseArtistsToGenres(enrichedTopArtists, topArtistGenres);
+  parseArtistsToGenres(enrichedTopTrackArtists, topSongGenres);
+  const mergedGenreDatabase = mergeGenreLists(topArtistGenres, topSongGenres);
+  await updateGenresWithCoordinates(mergedGenreDatabase);
+
+  // plotGenres(topGenres);
 
   console.log(
     "profile:",
@@ -60,10 +70,6 @@ if (!code) {
     artist,
     "enriched top artists:",
     enrichedTopArtists,
-    // "topArtistGenres:",
-    // topArtistGenres
-    "artists from top tracks:",
-    artistsFromTopTracks,
     "enriched artists from top tracks:",
     enrichedTopTrackArtists
   );
@@ -71,7 +77,17 @@ if (!code) {
 
   console.log("top genres based on top tracks:", topSongGenres);
 
-  console.log("merged top genres:", mergedTopGenres);
+  // console.log("merged top genres:", mergedTopGenres);
+
+  // console.log(
+  //   "genre database from top artists (unranked):",
+  //   genreDatabase_topArtists
+  // );
+  // console.log(
+  //   "genre database from top tracks (unranked):",
+  //   genreDatabase_topTracks
+  // );
+  console.log("merged genre database (unranked):", mergedGenreDatabase);
 
   populateUI(
     profile,
@@ -204,6 +220,8 @@ function getArtistIDsFromTracks(tracks: trackList) {
   return artistIDs;
 }
 
+//calling backend python file
+//get genres
 async function fetchGenres(artistIds: string[]) {
   const response = await fetch(
     `http://127.0.0.1:8000/get-genres/?artistIds=${artistIds.join(
@@ -245,7 +263,7 @@ async function fetchSeveralArtists(token: string, artistIDs: string[]) {
   return await result.json();
 }
 async function fetchAndMergeArtistData(artists: artistList) {
-  const formattedArtists = { items: artists.artists || artists.items || [] };
+  const formattedArtists = { items: artists.artists || artists.items || [] }; //formattedArtists makes sure class name of artist list is "items", instead of "artists"
   console.log("formatted artists:", formattedArtists);
   const artistIds = getArtistIDs(formattedArtists); // Extract only the IDs
   const genresDict = await fetchGenres(artistIds); // Fetch genres from backend
@@ -264,13 +282,6 @@ async function fetchAndMergeArtistData(artists: artistList) {
   return enrichedArtists;
 }
 
-// async function fetchAndMergeArtistDataFromTopTracks(artists: trackArtists) {
-//   const artistIds = getArtistIDs(artists);
-//   const genresDict = await fetchGenres(artistIds);
-
-//   const enrichedArtists = artists.items.map((artist) => ({}));
-// }
-
 // take object array of artists, return array of artist ids (string)
 //NOTE- maximum of 50 items in array
 function getArtistIDs(artists: any) {
@@ -278,70 +289,226 @@ function getArtistIDs(artists: any) {
   return artistList.map((artist: any) => artist.id); // Extract artist IDs
 }
 
-// function getArtistsFromTracks(tracks: trackList) {
-//   const artistIDs: string[] = [];
-//   tracks.items.forEach((track: any) => {
-//     artistIDs.push(track.artists[0]); //adding the primary artist to the list
-//   });
-//   return artistIDs;
-// }
-
-//get genres from track
-//Calculate top genres based on top artists and top tracks.
-//Weigh genres of an artist based on rank in top artists list
 function calculateTopGenresFromArtists(
   enrichedArtistsDict: Array<{ id: string; genres: string[] }>
 ) {
-  const genreCounts: { [key: string]: number } = {};
+  // const genreCounts: { [key: string]: number } = {};
+  const genreList: Genres = [];
 
   enrichedArtistsDict.forEach((artist, index) => {
     const weight = 1 / (index + 1); // Higher-ranked artists get more weight
     const numGenres = artist.genres.length || 1; // Avoid division by zero
 
     artist.genres.forEach((genre) => {
-      genreCounts[genre] = (genreCounts[genre] || 0) + weight / numGenres; //if genre already stored, add weight to existing weight- if new genre, use 0
+      // genreCounts[genre] = (genreCounts[genre] || 0) + weight / numGenres; //if genre already stored, add weight to existing weight- if new genre, use 0
+      const existingGenre = genreList.find((g) => g.genre === genre); // Find if the genre already exists in the list
+
+      if (existingGenre) {
+        // If genre exists, update its score
+        existingGenre.score += weight / numGenres;
+      } else {
+        // If genre is new, create a new Genre object and add it to genreList
+        genreList.push({
+          genre: genre,
+          artists: [], // Initialize with an empty array or relevant data
+          coordinates: { x: 0, y: 0 }, // Replace with actual coordinates if needed
+          score: weight / numGenres,
+        });
+      }
     });
   });
 
-  return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]); // Sort by weight
+  // return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]); // Sort by weight
+
+  return genreList.sort((a, b) => b.score - a.score);
 }
 
 //do the same for top tracks
 function calculateTopGenresFromTracks(
   enrichedArtistsDict: Array<{ id: string; genres: string[] }>
 ) {
-  const genreCounts: { [key: string]: number } = {};
+  // const genreCounts: { [key: string]: number } = {};
+  const genreList: Genres = [];
 
   enrichedArtistsDict.forEach((artist, index) => {
     const weight = 1 / (index + 1); // Higher-ranked artists get more weight
     const numGenres = artist.genres.length || 1; // Avoid division by zero
 
     artist.genres.forEach((genre) => {
-      genreCounts[genre] = (genreCounts[genre] || 0) + weight / numGenres; //if genre already stored, add weight to existing weight- if new genre, use 0
+      // genreCounts[genre] = (genreCounts[genre] || 0) + weight / numGenres; //if genre already stored, add weight to existing weight- if new genre, use 0
+      const existingGenre = genreList.find((g) => g.genre === genre); //Find if genre already exists in the list
+
+      if (existingGenre) {
+        // If genre exists, update its score
+        existingGenre.score += weight / numGenres;
+      } else {
+        // If genre is new, create a new Genre object and add it to genreList
+        genreList.push({
+          genre: genre,
+          artists: [], //initialize with empty array or relevant data
+          coordinates: { x: 0, y: 0 }, // Replace with actual coordinates if needed
+          score: weight / numGenres,
+        });
+      }
     });
   });
 
-  return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]); // Sort by weight
+  // return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]); // Sort by weight
+
+  return genreList.sort((a, b) => b.score - a.score);
 }
 
-function mergeGenreScores(
-  topArtistGenres: [string, number][],
-  topSongGenres: [string, number][],
+// Function to parse through enriched artists lists and add genres to the Genre[] object
+function parseArtistsToGenres(
+  enrichedArtistsDict: Array<{ id: string; genres: string[]; name: string }>,
+  genreList: Genres
+): Genres {
+  // const genres: Genres = [];
+
+  enrichedArtistsDict.forEach((artist) => {
+    artist.genres.forEach((genre) => {
+      // Check if the genre already exists in the genres array
+      const existingGenre = genreList.find((g) => g.genre === genre);
+
+      if (existingGenre) {
+        // If the genre exists, add the artist to the artists array if not already added
+        if (!existingGenre.artists.includes(artist.name)) {
+          existingGenre.artists.push(artist.name);
+        }
+      } else {
+        // If the genre does not exist, create a new genre object and add it to the genres array
+        genreList.push({
+          genre: genre,
+          artists: [artist.name], // Add the artist to the new genre's artists list
+          coordinates: { x: 0, y: 0 }, // You can adjust coordinates if needed
+          score: 0,
+        });
+      }
+    });
+  });
+
+  return genreList;
+}
+
+// // Function to merge two Genre[] arrays into one
+// function mergeGenreLists(list1: Genres, list2: Genres): Genres {
+//   const mergedGenres: Genres = [];
+
+//   // Helper function to add or merge genres
+//   function addOrMergeGenre(genre: Genre) {
+//     const existingGenre = mergedGenres.find((g) => g.genre === genre.genre);
+
+//     if (existingGenre) {
+//       // Merge artists if the genre already exists
+//       genre.artists.forEach((artist) => {
+//         if (!existingGenre.artists.includes(artist)) {
+//           existingGenre.artists.push(artist);
+//         }
+//       });
+//     } else {
+//       // Add new genre if it doesn't exist
+//       mergedGenres.push({
+//         genre: genre.genre,
+//         artists: genre.artists,
+//         coordinates: genre.coordinates,
+//         score: genre.score,
+//       });
+//     }
+//   }
+
+//   // Add all genres from the first list
+//   list1.forEach((genre) => addOrMergeGenre(genre));
+
+//   // Add all genres from the second list
+//   list2.forEach((genre) => addOrMergeGenre(genre));
+
+//   return mergedGenres;
+// }
+
+function mergeGenreLists(
+  list1: Genres,
+  list2: Genres,
   artistWeight: number = 0.5,
   songWeight: number = 0.5
-) {
-  const genreScores: { [key: string]: number } = {};
+): Genres {
+  const mergedGenres: Genres = [];
 
-  topArtistGenres.forEach(([genre, score]) => {
-    genreScores[genre] = (genreScores[genre] || 0) + score * artistWeight;
-  });
+  // Helper function to add or merge genres
+  function addOrMergeGenre(genre: Genre, weight: number) {
+    const existingGenre = mergedGenres.find((g) => g.genre === genre.genre);
 
-  topSongGenres.forEach(([genre, score]) => {
-    genreScores[genre] = (genreScores[genre] || 0) + score * songWeight;
-  });
+    if (existingGenre) {
+      // Merge artists if the genre already exists
+      genre.artists.forEach((artist) => {
+        if (!existingGenre.artists.includes(artist)) {
+          existingGenre.artists.push(artist);
+        }
+      });
 
-  return Object.entries(genreScores).sort((a, b) => b[1] - a[1]); //Sort by total weight
+      // Update the score using weighted sum
+      existingGenre.score += genre.score * weight;
+    } else {
+      // Add new genre with weighted score
+      mergedGenres.push({
+        genre: genre.genre,
+        artists: [...genre.artists], // Clone artists array
+        coordinates: genre.coordinates, // Keep coordinates from one list
+        score: genre.score * weight, // Apply weight
+      });
+    }
+  }
+
+  // Merge genres from both lists with respective weights
+  list1.forEach((genre) => addOrMergeGenre(genre, artistWeight));
+  list2.forEach((genre) => addOrMergeGenre(genre, songWeight));
+
+  // Sort by score in descending order
+  return mergedGenres.sort((a, b) => b.score - a.score);
 }
+
+// Function to fetch coordinates for genres, including additional properties (color, font_size)
+async function fetchGenreCoordinates(genres: string[]): Promise<{
+  [genre: string]: {
+    coordinates: { x: number; y: number };
+    color: string;
+    font_size: string;
+  };
+}> {
+  const response = await fetch(
+    `http://127.0.0.1:8000/get-genre-coordinates/?genres=${genres
+      .map((genre) => encodeURIComponent(genre))
+      .join("&genres=")}`
+  );
+  const data = await response.json();
+  return data; // Expected format: { "genre1": { coordinates: { x: 0, y: 0 }, color: "#ff5733", font_size: "14px" }, ... }
+}
+
+// Update combinedGenres with the fetched coordinates, color, and font_size
+async function updateGenresWithCoordinates(combinedGenres: Genres) {
+  // Extract only the genre names
+  const genreNames = combinedGenres.map((genre) => genre.genre);
+
+  // Fetch the coordinates and other properties
+  const coordinatesData = await fetchGenreCoordinates(genreNames);
+
+  // Update the combinedGenres list with the fetched data
+  combinedGenres.forEach((genre) => {
+    if (coordinatesData[genre.genre]) {
+      genre.coordinates = coordinatesData[genre.genre].coordinates;
+      // genre.color = coordinatesData[genre.genre].color;
+      // genre.font_size = coordinatesData[genre.genre].font_size;
+    }
+  });
+  return combinedGenres;
+}
+
+// //takes in merged top genres list and merged genre database, updates the database with the scores from top genres
+// function updateGenresWithScores(topGenres: [string, number][], genreList: Genres) {
+//   //for each genre in genreList, get scores from topGenres
+//   genreList.forEach((genre) => {
+//     genre.score =
+//   })
+//   }
 
 function populateUI(
   profile: UserProfile,
@@ -435,7 +602,7 @@ function populateUI(
   }
 }
 
-// //map genres using d3
+// // //map genres using d3
 // function plotGenres(genres: GenreData[]) {
 //   const svg = d3.select("#genre-map");
 //   const width = +svg.attr("width");

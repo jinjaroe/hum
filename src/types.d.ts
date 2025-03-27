@@ -74,7 +74,19 @@ interface artistGenres {
   artist_genres: {};
 }
 
-interface GenreData {
-  genre: string;
-  value: number;
+//Define structure for genre mappings/coordinates
+interface Coordinates {
+  x: number;
+  y: number;
 }
+
+//Define structure for each genre object
+interface Genre {
+  genre: string;
+  artists: string[];
+  coordinates: Coordinates;
+  score: number;
+}
+
+//Define the type for the genres array
+type Genres = Genre[];
