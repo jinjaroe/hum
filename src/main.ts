@@ -1,4 +1,4 @@
-// import * as d3 from "d3";
+import * as d3 from "d3";
 
 const clientId = "2e09b5c382a44f29a81b0c72ffba8b16";
 const params = new URLSearchParams(window.location.search);
@@ -57,8 +57,6 @@ if (!code) {
   const mergedGenreDatabase = mergeGenreLists(topArtistGenres, topSongGenres);
   await updateGenresWithCoordinates(mergedGenreDatabase);
 
-  // plotGenres(topGenres);
-
   console.log(
     "profile:",
     profile,
@@ -88,6 +86,126 @@ if (!code) {
   //   genreDatabase_topTracks
   // );
   console.log("merged genre database (unranked):", mergedGenreDatabase);
+  console.log("coords:", mergedGenreDatabase[0].coordinates.x);
+
+  // //genre visualization using d3
+  // Select the #content div and append an SVG
+  const contentDiv = d3.select("#content");
+  //ENAO page size
+  const width = 1610,
+    height = 22683;
+  // let width = (contentDiv.node() as HTMLElement).getBoundingClientRect().width;
+  // let height = (contentDiv.node() as HTMLElement).getBoundingClientRect()
+  //   .height;
+
+  const svg = contentDiv
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .classed("w-full h-full", true) // Tailwind utility classes
+    .style("background-color", "transparent");
+
+  // Scales to position nodes dynamically
+  const xScale = d3
+    .scaleLinear()
+    .domain([0, width])
+    .range([50, width - 50]);
+  const yScale = d3
+    .scaleLinear()
+    .domain([0, height])
+    .range([50, height - 50]);
+  // const xScale = d3.scaleLinear().domain([0, 800]).range([50, 750]);
+  // const yScale = d3.scaleLinear().domain([0, 600]).range([50, 550]);
+
+  // Bind data and create genre circles
+  svg
+    .selectAll("circle")
+    .data(
+      mergedGenreDatabase
+      // mergedGenreDatabase.filter((d) => {
+      //   const x = parseInt(d.coordinates.x.toString());
+      //   const y = parseInt(d.coordinates.y.toString());
+      //   console.log("x:", x);
+      //   console.log("y:", y);
+      //   return !isNaN(x) && !isNaN(y);
+      // })
+    )
+    .enter()
+    .append("circle")
+    .attr("cx", (d) => {
+      const x = parseInt(d.coordinates.x.toString());
+      return xScale(x);
+    })
+    .attr("cy", (d) => {
+      const y = parseInt(d.coordinates.y.toString());
+      return yScale(y);
+    })
+    .attr("r", (d) => d.score * 50)
+    .attr("fill", "#1E40AF")
+    .attr("stroke", "#60A5FA")
+    .attr("stroke-width", 2)
+    .attr("opacity", 0.8)
+    .on("mouseover", function () {
+      d3.select(this).attr("fill", "#F59E0B");
+    })
+    .on("mouseout", function () {
+      d3.select(this).attr("fill", "#1E40AF");
+    });
+
+  svg
+    .selectAll("text")
+    .data(
+      mergedGenreDatabase.filter((d) => {
+        const x = parseInt(d.coordinates.x.toString());
+        const y = parseInt(d.coordinates.y.toString());
+        return !isNaN(x) && !isNaN(y);
+      })
+    )
+    .enter()
+    .append("text")
+    .attr("x", (d) => {
+      const x = parseInt(d.coordinates.x.toString());
+      return xScale(x) + 5;
+    })
+    .attr("y", (d) => {
+      const y = parseInt(d.coordinates.y.toString());
+      return yScale(y) - 5;
+    })
+    .attr("fill", "white")
+    .attr("font-size", "14px")
+    .attr("font-family", "sans-serif")
+    .text((d) => d.genre);
+  // svg
+  //   .selectAll("circle")
+  //   .data(mergedGenreDatabase)
+  //   .enter()
+  //   .append("circle")
+  //   .attr("cx", (d) => xScale(parseInt(d.coordinates.x.toString() || "0")))
+  //   .attr("cy", (d) => yScale(parseInt(d.coordinates.y.toString() || "0")))
+  //   .attr("r", (d) => d.score * 50)
+  //   .attr("fill", "#1E40AF") // Tailwind blue-900
+  //   .attr("stroke", "#60A5FA") // Tailwind blue-400
+  //   .attr("stroke-width", 2)
+  //   .attr("opacity", 0.8)
+  //   .on("mouseover", function () {
+  //     d3.select(this).attr("fill", "#F59E0B");
+  //   }) // orange-500 on hover
+  //   .on("mouseout", function () {
+  //     d3.select(this).attr("fill", "#1E40AF");
+  //   });
+
+  // // Add genre text labels
+  // svg
+  //   .selectAll("text")
+  //   .data(mergedGenreDatabase)
+  //   .enter()
+  //   .append("text")
+  //   .attr("x", (d) => xScale(parseInt(d.coordinates.x.toString())) + 5)
+  //   .attr("y", (d) => yScale(parseInt(d.coordinates.y.toString())) - 5)
+  //   .attr("fill", "white")
+  //   .attr("font-size", "14px")
+  //   .attr("font-family", "sans-serif")
+  //   .text((d) => d.genre);
 
   populateUI(
     profile,
@@ -562,22 +680,6 @@ function populateUI(
     }
   }
 
-  // const genresContainer = document.getElementById("topGenres");
-  // if (genresContainer) {
-  //   try {
-  //     // Iterate through topArtistGenres and create a formatted display
-  //     for (const [artistId, genres] of Object.entries(artistGenres)) {
-  //       const artistInfo = document.createElement("p");
-  //       artistInfo.textContent = `${artistId}: ${genres.join(", ")}`; // Convert array to comma-separated string
-  //       genresContainer.appendChild(artistInfo);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching genres:", error);
-  //     genresContainer.innerText =
-  //       "Failed to load genres dictionary from backend.";
-  //   }
-  // }
-
   //display artist profile
   document.getElementById("artistName")!.innerText = artist.name;
   if (artist.images[0]) {
@@ -601,6 +703,22 @@ function populateUI(
     }
   }
 }
+
+// const genresContainer = document.getElementById("topGenres");
+// if (genresContainer) {
+//   try {
+//     // Iterate through topArtistGenres and create a formatted display
+//     for (const [artistId, genres] of Object.entries(artistGenres)) {
+//       const artistInfo = document.createElement("p");
+//       artistInfo.textContent = `${artistId}: ${genres.join(", ")}`; // Convert array to comma-separated string
+//       genresContainer.appendChild(artistInfo);
+//     }
+//   } catch (error) {
+//     console.error("Error fetching genres:", error);
+//     genresContainer.innerText =
+//       "Failed to load genres dictionary from backend.";
+//   }
+// }
 
 // // //map genres using d3
 // function plotGenres(genres: GenreData[]) {
