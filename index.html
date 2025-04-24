@@ -60,7 +60,12 @@
 
       <div class="flex items-center">
         <input type="checkbox" id="showTimeline" class="mr-2" />
-        <label for="showTimeline" class="text-sm">Show timeline</label>
+        <label for="showTimeline" class="text-sm mr-4">Show timeline</label>
+      </div>
+
+      <div class="flex items-center">
+        <input type="checkbox" id="showGenreNames" class="mr-2" checked />
+        <label for="showGenreNames" class="text-sm">Show genre names</label>
       </div>
     </nav>
 
@@ -84,6 +89,11 @@
           </div>
         </div>
       </div>
+
+      <div
+        id="tooltip"
+        class="absolute bg-black text-white text-sm rounded p-2 shadow-lg pointer-events-none opacity-0 transition-opacity duration-200 z-50"
+      ></div>
 
       <div class="flex justify-between items-center mt-4 py-2">
         <div class="flex items-center">

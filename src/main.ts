@@ -88,34 +88,69 @@ if (!code) {
   console.log("merged genre database (unranked):", mergedGenreDatabase);
   console.log("coords:", mergedGenreDatabase[0].coordinates.x);
 
-  // //genre visualization using d3
-  // Select the #content div and append an SVG
-  const contentDiv = d3.select("#content");
-  //ENAO page size
-  const width = 1610,
-    height = 22683;
-  // let width = (contentDiv.node() as HTMLElement).getBoundingClientRect().width;
-  // let height = (contentDiv.node() as HTMLElement).getBoundingClientRect()
-  //   .height;
+  //ENAO SCALING OF GENRE MAPPINGS
+  // // //genre visualization using d3
+  // // Select the #content div and append an SVG
+  // const contentDiv = d3.select("#content");
+  // //ENAO page size
+  // const width = 1610,
+  //   height = 22683;
 
-  const svg = contentDiv
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .classed("w-full h-full", true) // Tailwind utility classes
-    .style("background-color", "transparent");
+  // const svg = contentDiv
+  //   .append("svg")
+  //   .attr("width", width)
+  //   .attr("height", height)
+  //   .classed("w-full h-full", true) // Tailwind utility classes
+  //   .style("background-color", "transparent");
 
-  // Scales to position nodes dynamically
+  // // Scales to position nodes dynamically
+
+  // const xScale = d3
+  //   .scaleLinear()
+  //   .domain([0, width])
+  //   .range([50, width - 50]);
+  // const yScale = d3
+  //   .scaleLinear()
+  //   .domain([0, height])
+  //   .range([50, height - 50]);
+
+  //NORMALIZED GENRE MAPPING
+  const svgWidth = window.innerWidth;
+  const svgHeight = window.innerHeight;
+
+  const xValues = mergedGenreDatabase.map((d) =>
+    parseInt(d.coordinates.x.toString())
+  );
+  const yValues = mergedGenreDatabase.map((d) =>
+    parseInt(d.coordinates.y.toString())
+  );
+
+  const xMin = d3.min(xValues) ?? 0;
+  const xMax = d3.max(xValues) ?? svgWidth;
+  const yMin = d3.min(yValues) ?? 0;
+  const yMax = d3.max(yValues) ?? svgHeight;
+
+  const horizontalPadding = 50; // or 100 for more space
   const xScale = d3
     .scaleLinear()
-    .domain([0, width])
-    .range([50, width - 50]);
+    .domain([xMin, xMax])
+    .range([horizontalPadding, svgWidth - horizontalPadding]);
+
+  const verticalPadding = 50;
   const yScale = d3
     .scaleLinear()
-    .domain([0, height])
-    .range([50, height - 50]);
-  // const xScale = d3.scaleLinear().domain([0, 800]).range([50, 750]);
-  // const yScale = d3.scaleLinear().domain([0, 600]).range([50, 550]);
+    .domain([yMin, yMax])
+    .range([verticalPadding, svgHeight - verticalPadding]);
+
+  const contentDiv = d3.select("#content");
+  const svg = contentDiv
+    .append("svg")
+    .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("width", "100%")
+    .style("height", "100%")
+    .classed("w-full h-full", true)
+    .style("background-color", "transparent");
 
   // Bind data and create genre circles
   svg
@@ -132,6 +167,7 @@ if (!code) {
     )
     .enter()
     .append("circle")
+
     .attr("cx", (d) => {
       const x = parseInt(d.coordinates.x.toString());
       return xScale(x);
@@ -140,17 +176,40 @@ if (!code) {
       const y = parseInt(d.coordinates.y.toString());
       return yScale(y);
     })
-    .attr("r", (d) => d.score * 50)
-    .attr("fill", "#1E40AF")
-    .attr("stroke", "#60A5FA")
+    .attr("r", (d) => d.score * 50 + 2)
+    // .attr("r", 5)
+    .attr("fill", "#FFFFFF")
+    .attr("stroke", "#FFFFFF")
     .attr("stroke-width", 2)
     .attr("opacity", 0.8)
-    .on("mouseover", function () {
+    .on("mouseover", function (event, d) {
       d3.select(this).attr("fill", "#F59E0B");
+
+      d3.select("#tooltip")
+        .style("opacity", 1)
+        .html(
+          `<strong>${d.genre}</strong><br/>
+           Minutes listened: <span class="text-gray-300">___</span><br/>
+           Top song: <span class="text-gray-300">___</span><br/>
+           Top artist: <span class="text-gray-300">___</span>`
+        );
+    })
+    .on("mousemove", function (event) {
+      d3.select("#tooltip")
+        .style("left", event.pageX + 15 + "px")
+        .style("top", event.pageY + 15 + "px");
     })
     .on("mouseout", function () {
-      d3.select(this).attr("fill", "#1E40AF");
+      d3.select(this).attr("fill", "#FFFFFF");
+
+      d3.select("#tooltip").style("opacity", 0);
     });
+  // .on("mouseover", function () {
+  //   d3.select(this).attr("fill", "#F59E0B");
+  // })
+  // .on("mouseout", function () {
+  //   d3.select(this).attr("fill", "#1E40AF");
+  // });
 
   svg
     .selectAll("text")
@@ -163,6 +222,7 @@ if (!code) {
     )
     .enter()
     .append("text")
+    .attr("class", "genre-label")
     .attr("x", (d) => {
       const x = parseInt(d.coordinates.x.toString());
       return xScale(x) + 5;
@@ -175,37 +235,14 @@ if (!code) {
     .attr("font-size", "14px")
     .attr("font-family", "sans-serif")
     .text((d) => d.genre);
-  // svg
-  //   .selectAll("circle")
-  //   .data(mergedGenreDatabase)
-  //   .enter()
-  //   .append("circle")
-  //   .attr("cx", (d) => xScale(parseInt(d.coordinates.x.toString() || "0")))
-  //   .attr("cy", (d) => yScale(parseInt(d.coordinates.y.toString() || "0")))
-  //   .attr("r", (d) => d.score * 50)
-  //   .attr("fill", "#1E40AF") // Tailwind blue-900
-  //   .attr("stroke", "#60A5FA") // Tailwind blue-400
-  //   .attr("stroke-width", 2)
-  //   .attr("opacity", 0.8)
-  //   .on("mouseover", function () {
-  //     d3.select(this).attr("fill", "#F59E0B");
-  //   }) // orange-500 on hover
-  //   .on("mouseout", function () {
-  //     d3.select(this).attr("fill", "#1E40AF");
-  //   });
 
-  // // Add genre text labels
-  // svg
-  //   .selectAll("text")
-  //   .data(mergedGenreDatabase)
-  //   .enter()
-  //   .append("text")
-  //   .attr("x", (d) => xScale(parseInt(d.coordinates.x.toString())) + 5)
-  //   .attr("y", (d) => yScale(parseInt(d.coordinates.y.toString())) - 5)
-  //   .attr("fill", "white")
-  //   .attr("font-size", "14px")
-  //   .attr("font-family", "sans-serif")
-  //   .text((d) => d.genre);
+  //contour map
+  const genreData = mergedGenreDatabase;
+
+  genreData.forEach((d) => {
+    d.coordinates.x = parseInt(d.coordinates.x.toString());
+    d.coordinates.y = parseInt(d.coordinates.y.toString());
+  });
 
   populateUI(
     profile,
@@ -635,6 +672,13 @@ function populateUI(
   artist: artistProfile
   // artistGenres: artistGenres
 ) {
+  const checkbox = document.getElementById(
+    "showGenreNames"
+  ) as HTMLInputElement;
+  checkbox.addEventListener("change", () => {
+    const show = checkbox.checked;
+    d3.selectAll(".genre-label").style("display", show ? "block" : "none");
+  });
   document.getElementById("displayName")!.innerText = profile.display_name;
   if (profile.images[0]) {
     const profileImage = new Image(200, 200);
